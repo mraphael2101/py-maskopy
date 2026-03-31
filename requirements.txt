@@ -1,0 +1,5 @@
+mysql-connector-python
+# NOTE: 'maskopy' is implemented as a LOCAL folder in this project root.
+# It is NOT a standard pip package (the official FINRA tool is an AWS framework).
+# Python automatically treats the 'maskopy/' folder as a package, allowing:
+# 'from maskopy import mask_email, mask_phone, mask_card' in your scripts.

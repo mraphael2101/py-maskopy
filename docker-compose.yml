@@ -1,0 +1,16 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: maskopy-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpwd
+      MYSQL_DATABASE: dummy_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpwd"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
