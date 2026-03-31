@@ -44,13 +44,25 @@ This project provides a Dockerized MySQL database with two associated tables (`c
    ```
 
 3. **Install Python dependencies**:
+   It is recommended to use a virtual environment:
    ```bash
+   python3 -m venv venv
+   source venv/bin/activate
    pip install -r requirements.txt
+   ```
+   Or install directly using `python3` and `pip3`:
+   ```bash
+   pip3 install -r requirements.txt
    ```
 
 4. **Run the masking script**:
+   If using a virtual environment:
    ```bash
    python mask_data.py
+   ```
+   Otherwise, use `python3`:
+   ```bash
+   python3 mask_data.py
    ```
    The script will connect to the database (at `127.0.0.1:3307`), mask the sensitive fields, and commit the changes.
 
@@ -58,8 +70,13 @@ This project provides a Dockerized MySQL database with two associated tables (`c
    Run the same SQL command as in step 2 to see the masked records.
 
 6. **Reset the database (optional)**:
+   If using a virtual environment:
    ```bash
    python reset_data.py
+   ```
+   Otherwise, use `python3`:
+   ```bash
+   python3 reset_data.py
    ```
    This will clear the current records and re-insert the original, unmasked data.
 
