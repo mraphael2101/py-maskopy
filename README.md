@@ -36,7 +36,7 @@ This project provides a Dockerized MySQL database with two associated tables (`c
    ```bash
    docker compose up -d
    ```
-   This will spin up a MySQL container on port `3307` (mapped from container `3306`).
+   This will spin up a MySQL container on port `3307`. On its first start, it automatically runs the `init.sql` script to create the `customers` and `payments` tables and load them with sample data.
 
 2. **Verify the database tables**:
    ```bash
@@ -63,6 +63,12 @@ This project provides a Dockerized MySQL database with two associated tables (`c
    ```
    This will clear the current records and re-insert the original, unmasked data.
 
+7. **Stop the database**:
+   ```bash
+   docker compose down
+   ```
+   This will stop and remove the containers. The data in the database will be reset to the original state defined in `init.sql` the next time you start it.
+
 ## Troubleshooting
 
 ### Connection Issues
@@ -71,6 +77,9 @@ If you see an "Access Denied" error when running the script, it's likely a port 
 - **Host IP**: Use `127.0.0.1` in the script instead of `localhost` to ensure a TCP connection is used.
 
 ## Key Concepts
+
+### Automatic Table Creation
+When you start the database for the first time, Docker automatically uses the `init.sql` file in this project to set up your tables (`customers` and `payments`) and add the initial data. You don't need to run any manual SQL commands to get started.
 
 ### Data Association
 The `payments` table is linked to the `customers` table via a `customer_id` foreign key. This allows for realistic data masking scenarios where related data might need consistent masking.
