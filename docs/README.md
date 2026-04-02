@@ -1,13 +1,13 @@
-# Maskopy MySQL Data Masking Skeleton
+# Maskopy Oracle Data Masking Skeleton
 
-This project provides a Dockerized MySQL database with two associated tables (`customers` and `payments`) and a standalone Python script to mask sensitive fields using `maskopy`.
+This project provides a Dockerized Oracle database with two associated tables (`customers` and `payments`) and local Python masking logic (`maskopy/`).
 
 ## Project Overview
 
-- **MySQL Database**: A `mysql:8.0` container initialized with a `dummy_db` and two tables:
+- **Oracle Database**: A `gvenzl/oracle-free` container initialized with an application schema and two tables:
   - `customers`: Contains `name`, `email`, and `phone`.
   - `payments`: Associated with `customers`, containing `card_number` and `amount`.
-- **Standalone Masking Script**: `scripts/mask_data.py` connects to the database and masks sensitive fields. It imports masking logic from the local `maskopy` package.
+- **Standalone Masking Scripts**: `scripts/mask_data.py` and `scripts/reset_data.py` exist for the original MySQL demo flow. They are not yet updated to connect to Oracle.
 - **Masking Method**: The original `maskopy` tool is built to run on Amazon Web Services (AWS). To make it easy to use on your own computer, we've included a simplified version in the `maskopy` folder that works the same way but doesn't require any cloud setup.
 
 ## Prerequisites
@@ -21,13 +21,13 @@ This project provides a Dockerized MySQL database with two associated tables (`c
 ```text
 .
 ├── config/                # Configuration and orchestration files
-│   ├── docker-compose.yml # Orchestration for the MySQL database
+│   ├── docker-compose.yml # Orchestration for the Oracle database
 │   └── setup.py           # Package configuration for local development (optional)
 ├── db/                    # Database-related files
 │   ├── data/              # Original sample data in CSV format
 │   │   ├── customers.csv
 │   │   └── payments.csv
-│   └── init.sql           # SQL script to bootstrap the dummy database
+│   └── init.sql           # SQL script to bootstrap the Oracle schema and sample data
 ├── docs/                  # Documentation files
 │   ├── MASKOPY_CAPABILITIES.md
 │   └── README.md (this file)
@@ -45,12 +45,8 @@ This project provides a Dockerized MySQL database with two associated tables (`c
 To get started, run these commands from the repository root.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
 docker compose -f config/docker-compose.yml up -d
-python3 -m pip install -e .
-python3 scripts/reset_data.py
-python3 scripts/mask_data.py
+docker exec -it maskopy-oracle sqlplus maskopy/maskopypwd@//localhost:1521/FREEPDB1
 docker compose -f config/docker-compose.yml down
 ```
 
@@ -58,25 +54,26 @@ Or run from anywhere by setting `MASKOPY_ROOT`:
 
 ```bash
 MASKOPY_ROOT=/path/to/py-maskopy
-python3 -m venv "$MASKOPY_ROOT/.venv"
-source "$MASKOPY_ROOT/.venv/bin/activate"
 docker compose -f "$MASKOPY_ROOT/config/docker-compose.yml" up -d
-python3 -m pip install -e "$MASKOPY_ROOT"
-python3 "$MASKOPY_ROOT/scripts/reset_data.py"
-python3 "$MASKOPY_ROOT/scripts/mask_data.py"
+docker exec -it maskopy-oracle sqlplus maskopy/maskopypwd@//localhost:1521/FREEPDB1
 docker compose -f "$MASKOPY_ROOT/config/docker-compose.yml" down
 ```
 
 1. **Start the database**:
-   Run this command to spin up the MySQL container:
+   Run this command to spin up the Oracle container:
    ```bash
    docker compose -f config/docker-compose.yml up -d
    ```
-   *Note: This starts MySQL on port `3307` and automatically sets up the tables.*
+   *Note: This starts Oracle on port `1521` and automatically sets up the tables. **The first startup may take 2-4 minutes to complete initialization and run the SQL scripts. Check `docker logs -f maskopy-oracle` to see when it's ready.**.*
 
 2. **Verify the database tables**:
    ```bash
-   docker exec -it maskopy-mysql mysql -u root -prootpwd -e "SELECT * FROM dummy_db.customers; SELECT * FROM dummy_db.payments;"
+   docker exec -it maskopy-oracle sqlplus maskopy/maskopypwd@//localhost:1521/FREEPDB1
+   ```
+   Then run:
+   ```sql
+   SELECT * FROM customers;
+   SELECT * FROM payments;
    ```
 
 3. **Install Python dependencies**:
@@ -85,23 +82,9 @@ docker compose -f "$MASKOPY_ROOT/config/docker-compose.yml" down
    source .venv/bin/activate
    python3 -m pip install -e .
    ```
+   This is optional unless you are running the Python scripts.
 
-4. **Run the masking script**:
-   ```bash
-   python3 scripts/mask_data.py
-   ```
-   The script connects to the database, masks sensitive fields, and shows the results in a table.
-
-5. **Verify masked data**:
-   Run the command in step 2 again to see the changes in the database.
-
-6. **Reset the database**:
-   ```bash
-   python3 scripts/reset_data.py
-   ```
-   This reloads the original data from the `db/data/` folder.
-
-7. **Stop the database**:
+4. **Stop the database**:
    ```bash
    docker compose -f config/docker-compose.yml down
    ```
@@ -109,7 +92,7 @@ docker compose -f "$MASKOPY_ROOT/config/docker-compose.yml" down
 ## Troubleshooting
 
 ### "Press Play" in your IDE
-If you are using an IDE like PyCharm or VS Code, you can simply open `scripts/mask_data.py` or `scripts/reset_data.py` and press the "Play" button. The scripts are smart enough to find the project root and the data files automatically.
+If you are using an IDE like PyCharm or VS Code, you can open `scripts/mask_data.py` or `scripts/reset_data.py` and press the "Play" button. Those scripts are not yet updated to connect to Oracle.
 
 ### "no such file or directory" or "No module named maskopy"
 If you see an error like "no such file or directory" or "No module named maskopy," it usually means your current working directory (or `PYTHONPATH`) does not point at the repo.
@@ -123,9 +106,7 @@ PYTHONPATH=. python -m pydoc maskopy.masking
 ```
 
 ### Connection Issues
-If you see an "Access Denied" error when running the script, it's likely a port conflict with a local MySQL server on your machine.
-- **Port 3307**: We've configured the container to use `3307` on the host to avoid common conflicts with `3306`.
-- **Host IP**: Use `127.0.0.1` in the script instead of `localhost` to ensure a TCP connection is used.
+If you have trouble connecting, check that port `1521` is free on your machine and that the container is healthy.
 
 ## Key Concepts
 
@@ -145,10 +126,10 @@ To provide a working demonstration of these masking concepts locally:
 3. **Core Principles**: The logic inside `maskopy/masking.py` mirrors the types of obfuscation the official framework would apply to your database fields in an AWS environment.
 
 ### Oracle Integration
-This PoC uses MySQL for demonstration. The masking functions in `maskopy/` are database-agnostic, so it is viable to apply the same masking rules to Oracle.
+The database in this PoC is Oracle. The masking functions in `maskopy/` are database-agnostic, so it is viable to apply the same masking rules to Oracle tables.
 
 What is not implemented in this repo yet:
-- An Oracle connection layer (for example via the `oracledb` Python driver).
+- Updating `scripts/mask_data.py` and `scripts/reset_data.py` to connect to Oracle (for example via the `oracledb` Python driver).
 - Oracle-specific SQL and data-type handling.
 
 ### Masking Strategy
@@ -157,11 +138,15 @@ The local package provides functions for:
 - **Phone Numbers**: Masking all but the last 4 digits (e.g., `***-0101`).
 - **Credit Cards**: Masking middle digits (e.g., `1234-****-****-3456`).
 
+### SQL*Plus Console Formatting
+The `db/login.sql` file is used to automatically format the output of `sqlplus` for the `customers` and `payments` tables. Oracle's `sqlplus` looks for a file named exactly `login.sql` in the directory specified by the `ORACLE_PATH` environment variable (set to `/opt/oracle` in our `docker-compose.yml`) and runs it whenever a new session starts. This ensures that the wide `VARCHAR2` columns are displayed neatly on a single line instead of wrapping across multiple lines.
+
 ## Configuration
 
 The database can be configured in `config/docker-compose.yml`:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `MYSQL_ROOT_PASSWORD` | Root password for MySQL | `rootpwd` |
-| `MYSQL_DATABASE` | Target database name | `dummy_db` |
+| `ORACLE_PASSWORD` | SYS/SYSTEM password | `rootpwd` |
+| `APP_USER` | Application schema user | `maskopy` |
+| `APP_USER_PASSWORD` | Application schema password | `maskopypwd` |

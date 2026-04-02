@@ -1,4 +1,4 @@
-import mysql.connector
+import oracledb
 
 from maskopy import mask_email, mask_phone, mask_card
 
@@ -23,19 +23,18 @@ def print_table(title, headers, rows):
 
 def run_masking():
     config = {
-        'host': '127.0.0.1',
-        'port': 3307,
-        'user': 'root',
-        'password': 'rootpwd',
-        'database': 'dummy_db'
+        'user': 'maskopy',
+        'password': 'maskopypwd',
+        'dsn': 'localhost:1521/FREEPDB1'
     }
     
     try:
-        conn = mysql.connector.connect(**config)
-        cursor = conn.cursor(dictionary=True)
+        conn = oracledb.connect(**config)
+        cursor = conn.cursor()
         
         cursor.execute("SELECT id, name, email, phone FROM customers")
-        customers = cursor.fetchall()
+        columns = [col[0].lower() for col in cursor.description]
+        customers = [dict(zip(columns, row)) for row in cursor.fetchall()]
         
         customer_rows = []
         for c in customers:
@@ -43,21 +42,22 @@ def run_masking():
             new_phone = mask_phone(c['phone'])
             customer_rows.append([c['id'], c['name'], new_email, new_phone])
             cursor.execute(
-                "UPDATE customers SET email=%s, phone=%s WHERE id=%s",
+                "UPDATE customers SET email=:1, phone=:2 WHERE id=:3",
                 (new_email, new_phone, c['id'])
             )
         
         print_table("Masked Customers", ["id", "name", "email", "phone"], customer_rows)
         
         cursor.execute("SELECT id, customer_id, card_number FROM payments")
-        payments = cursor.fetchall()
+        columns = [col[0].lower() for col in cursor.description]
+        payments = [dict(zip(columns, row)) for row in cursor.fetchall()]
         
         payment_rows = []
         for p in payments:
             new_card = mask_card(p['card_number'])
             payment_rows.append([p['id'], p['customer_id'], new_card])
             cursor.execute(
-                "UPDATE payments SET card_number=%s WHERE id=%s",
+                "UPDATE payments SET card_number=:1 WHERE id=:2",
                 (new_card, p['id'])
             )
             
@@ -69,7 +69,7 @@ def run_masking():
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        if 'conn' in locals() and conn.is_connected():
+        if 'conn' in locals():
             cursor.close()
             conn.close()
 

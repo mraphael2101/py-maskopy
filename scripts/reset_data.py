@@ -1,4 +1,4 @@
-import mysql.connector
+import oracledb
 import csv
 from pathlib import Path
 
@@ -37,22 +37,18 @@ def load_csv(filename):
 
 def run_reset():
     config = {
-        'host': '127.0.0.1',
-        'port': 3307,
-        'user': 'root',
-        'password': 'rootpwd',
-        'database': 'dummy_db'
+        'user': 'maskopy',
+        'password': 'maskopypwd',
+        'dsn': 'localhost:1521/FREEPDB1'
     }
     
     try:
-        conn = mysql.connector.connect(**config)
+        conn = oracledb.connect(**config)
         cursor = conn.cursor()
         
-        cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
-        
         print("Clearing data...")
-        cursor.execute("TRUNCATE TABLE payments;")
-        cursor.execute("TRUNCATE TABLE customers;")
+        cursor.execute("DELETE FROM payments")
+        cursor.execute("DELETE FROM customers")
         
         print("Restoring original data from CSV...")
         
@@ -62,7 +58,7 @@ def run_reset():
             print_table("Restoring Customers", ["id", "name", "email", "phone"], display_rows)
             for c in customers_data:
                 cursor.execute(
-                    "INSERT INTO customers (id, name, email, phone) VALUES (%s, %s, %s, %s)",
+                    "INSERT INTO customers (id, name, email, phone) VALUES (:1, :2, :3, :4)",
                     (c['id'], c['name'], c['email'], c['phone'])
                 )
         
@@ -72,11 +68,9 @@ def run_reset():
             print_table("Restoring Payments", ["id", "customer_id", "card_number"], display_rows)
             for p in payments_data:
                 cursor.execute(
-                    "INSERT INTO payments (id, customer_id, card_number, amount) VALUES (%s, %s, %s, %s)",
+                    "INSERT INTO payments (id, customer_id, card_number, amount) VALUES (:1, :2, :3, :4)",
                     (p['id'], p['customer_id'], p['card_number'], p['amount'])
                 )
-        
-        cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
         
         conn.commit()
         print("\nDatabase reset complete.")
@@ -84,7 +78,7 @@ def run_reset():
     except Exception as e:
         print(f"Error: {e}")
     finally:
-        if 'conn' in locals() and conn.is_connected():
+        if 'conn' in locals():
             cursor.close()
             conn.close()
 

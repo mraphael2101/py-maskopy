@@ -1,16 +1,20 @@
 services:
   db:
-    image: mysql:8.0
-    container_name: maskopy-mysql
+    image: gvenzl/oracle-free:latest
+    container_name: maskopy-oracle
     environment:
-      MYSQL_ROOT_PASSWORD: rootpwd
-      MYSQL_DATABASE: dummy_db
+      ORACLE_PASSWORD: rootpwd
+      APP_USER: maskopy
+      APP_USER_PASSWORD: maskopypwd
+      ORACLE_PATH: /opt/oracle
     ports:
-      - "3307:3306"
+      - "1521:1521"
     volumes:
-      - ../db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ../db/init.sql:/container-entrypoint-initdb.d/init.sql:ro
+      - ../db/login.sql:/opt/oracle/login.sql:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpwd"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
