@@ -58,8 +58,6 @@ def mask_card(card):
         return f"{parts[0]}-****-****-{parts[3]}"
     return "****"
 
-# --- ADVANCED MASKOPY-INSPIRED METHODS ---
-
 def mask_hash(value, salt="maskopy-salt"):
     """
     Performs deterministic hashing (SHA-256) on a value.

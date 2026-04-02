@@ -137,6 +137,11 @@ The local package provides functions for:
 - **Emails**: Masking local part while keeping the first character (e.g., `j***@example.com`).
 - **Phone Numbers**: Masking all but the last 4 digits (e.g., `***-0101`).
 - **Credit Cards**: Masking middle digits (e.g., `1234-****-****-3456`).
+- **Deterministic Hashing**: Masking sensitive data with a salt-based SHA-256 hash to maintain consistency across tables.
+- **Date Shifting**: Randomly shifting dates within a specified range to obfuscate exact timestamps while keeping them realistic.
+- **Lookup Replacement**: Replacing sensitive values with random but realistic entries from a predefined list (e.g., names, cities).
+- **Redaction**: Completely scrubbing data by replacing it with a fixed `[REDACTED]` string.
+- **Format-Preserving Encryption (FPE)**: Replacing characters with pseudo-random ones from the same set to maintain the data's original length and structure.
 
 ### SQL*Plus Console Formatting
 The `db/login.sql` file is used to automatically format the output of `sqlplus` for the `customers` and `payments` tables. Oracle's `sqlplus` looks for a file named exactly `login.sql` in the directory specified by the `ORACLE_PATH` environment variable (set to `/opt/oracle` in our `docker-compose.yml`) and runs it whenever a new session starts. This ensures that the wide `VARCHAR2` columns are displayed neatly on a single line instead of wrapping across multiple lines.
